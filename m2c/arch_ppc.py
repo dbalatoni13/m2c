@@ -109,7 +109,8 @@ class FcmpoCrorLtPattern(SimpleAsmPattern):
         return Replacement(
             [AsmInstruction("fcmpo.lte.fictive", fcmpo.args)], len(m.body)
         )
-    
+
+
 class FcmpoCrorGtPattern(SimpleAsmPattern):
     """
     For floating point, `x <= y` and `x >= y` use `cror` to OR together the `cr0_eq`
@@ -274,6 +275,82 @@ class FloatishToUintPattern(SimpleAsmPattern):
     def replace(self, m: AsmMatch) -> Optional[Replacement]:
         return Replacement(
             [AsmInstruction("cvt.u.d.fictive", [Register("r3"), Register("f1")])],
+            len(m.body),
+        )
+
+
+class Div2Pattern(SimpleAsmPattern):
+    """Division by two."""
+
+    pattern = make_pattern(
+        "rlwinm $x, $s, 1, 31, 31",
+        "add $y, $x, $s",
+        "srawi $d, $y, 1",
+    )
+
+    def replace(self, m: AsmMatch) -> Optional[Replacement]:
+        return Replacement(
+            [AsmInstruction("div.fictive", [m.regs["d"], m.regs["s"], AsmLiteral(2)])],
+            len(m.body),
+        )
+
+
+class DivP2Pattern(SimpleAsmPattern):
+    """Division by power of two."""
+
+    pattern = make_pattern(
+        "srawi $x, $s, N",
+        "addze $d, $x",
+    )
+
+    def replace(self, m: AsmMatch) -> Optional[Replacement]:
+        power = m.literals["N"]
+        return Replacement(
+            [
+                AsmInstruction(
+                    "div.fictive", [m.regs["d"], m.regs["s"], AsmLiteral(2**power)]
+                )
+            ],
+            len(m.body),
+        )
+
+
+class Mod2Pattern(SimpleAsmPattern):
+    """Modulo two."""
+
+    pattern = make_pattern(
+        "rlwinm $x, $s, 1, 31, 31",
+        "rlwinm $y, $s, 0, 31, 31",
+        "xor $z, $y, $x",
+        "subf $d, $x, $z",
+    )
+
+    def replace(self, m: AsmMatch) -> Optional[Replacement]:
+        return Replacement(
+            [AsmInstruction("mod.fictive", [m.regs["d"], m.regs["s"], AsmLiteral(2)])],
+            len(m.body),
+        )
+
+
+class ModP2Pattern(SimpleAsmPattern):
+    """Modulo power of two."""
+
+    pattern = make_pattern(
+        "rlwinm $x, $s, N, 0, (31 - N)",
+        "rlwinm $y, $s, 1, 31, 31",
+        "subf $x, $y, $x",
+        "rlwinm $x, $x, (32 - N), 0, 31",
+        "add $d, $x, $s",
+    )
+
+    def replace(self, m: AsmMatch) -> Optional[Replacement]:
+        power = 32 - m.literals["N"]
+        return Replacement(
+            [
+                AsmInstruction(
+                    "mod.fictive", [m.regs["d"], m.regs["s"], AsmLiteral(2**power)]
+                )
+            ],
             len(m.body),
         )
 
@@ -1089,6 +1166,10 @@ class PpcArch(Arch):
         BoolCastPattern(),
         BranchCtrPattern(),
         FloatishToUintPattern(),
+        Div2Pattern(),
+        DivP2Pattern(),
+        Mod2Pattern(),
+        ModP2Pattern(),
     ]
 
     instrs_ignore: Set[str] = {
@@ -1213,6 +1294,8 @@ class PpcArch(Arch):
             fold_mul_chains(UnaryOp.sint("-", a.reg(1))),
         ),
         "neg": lambda a: fold_mul_chains(UnaryOp.sint("-", a.reg(1))),
+        "div.fictive": lambda a: BinaryOp.sint(a.reg(1), "/", a.full_imm(2)),
+        "mod.fictive": lambda a: BinaryOp.sint(a.reg(1), "%", a.full_imm(2)),
         "divw": lambda a: BinaryOp.sint(a.reg(1), "/", a.reg(2)),
         "divwu": lambda a: BinaryOp.uint(a.reg(1), "/", a.reg(2)),
         "mulli": lambda a: BinaryOp.int(a.reg(1), "*", a.imm(2)),
