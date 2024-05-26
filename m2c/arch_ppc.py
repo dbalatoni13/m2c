@@ -109,7 +109,8 @@ class FcmpoCrorLtLtPattern(SimpleAsmPattern):
         return Replacement(
             [AsmInstruction("fcmpo.lte.fictive", fcmpo.args)], len(m.body)
         )
-    
+
+
 class FcmpoCrorGtPattern(SimpleAsmPattern):
     """
     For floating point, `x <= y` and `x >= y` use `cror` to OR together the `cr0_eq`
