@@ -742,6 +742,10 @@ def format_hex(val: int) -> str:
     return format(val, "x").upper()
 
 
+def format_hex_padded(val: int) -> str:
+    return "{:02X}".format(val).upper()
+
+
 def escape_byte(b: int) -> bytes:
     table = {
         b"\0": b"\\0",
@@ -1492,7 +1496,7 @@ class StructAccess(Expression):
             return f"M2C_FIELD({var.format(fmt)}, {Type.ptr(self.type).format(fmt)}, {offset_str})"
         else:
             prefix = "unk" + ("_" if fmt.coding_style.unknown_underscore else "")
-            field_path = [0, prefix + format_hex(self.offset)]
+            field_path = [0, prefix + format_hex_padded(self.offset)]
         field_name = self.access_path_to_field_name(field_path, fmt)
 
         # Rewrite `(&x)->y` to `x.y` by stripping `AddressOf` & setting deref=False
