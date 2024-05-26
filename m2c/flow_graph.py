@@ -862,7 +862,7 @@ def build_graph_from_block(
                             and isinstance(arg.argument, AsmGlobalSymbol)
                             and any(
                                 arg.argument.symbol_name.startswith(prefix)
-                                for prefix in ("jtbl", "jpt_", "lbl_")
+                                for prefix in ("jtbl", "jpt_", "jumptable_")
                             )
                         ):
                             jtbl_names.add(arg.argument.symbol_name)
