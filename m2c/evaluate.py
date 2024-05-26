@@ -938,7 +938,7 @@ def array_access_from_add(
             # Make up a struct with a tag name based on the symbol & struct size.
             # Although `scale = 8` could indicate an array of longs/doubles, it seems more
             # common to be an array of structs.
-            struct_name = f"_struct_{uw_base.expr.symbol_name}_0x{scale:X}"
+            struct_name = f"_struct_{uw_base.expr.symbol_name}_0x{scale:02X}"
             struct = typepool.get_struct_by_tag_name(
                 struct_name, stack_info.global_info.typemap
             )
@@ -948,7 +948,7 @@ def array_access_from_add(
                 )
             elif struct.size != scale:
                 # This should only happen if there was already a struct with this name in the context
-                raise DecompFailure(f"sizeof(struct {struct_name}) != {scale:#x}")
+                raise DecompFailure(f"sizeof(struct {struct_name}) != {scale:#02x}")
             inner_type = Type.struct(struct)
 
         if inner_type is not None:

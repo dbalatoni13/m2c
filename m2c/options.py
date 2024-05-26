@@ -254,6 +254,9 @@ class Formatter:
     def format_hex(self, val: int) -> str:
         return format(val, "x").upper()
 
+    def format_hex_padded(self, val: int) -> str:
+        return "{:02X}".format(val).upper()
+
     def format_int(self, val: int, size_bits: Optional[int] = None) -> str:
         if abs(val) < 10 or self.force_decimal:
             return str(val)

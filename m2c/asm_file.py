@@ -417,7 +417,9 @@ def parse_file(f: typing.TextIO, arch: ArchAsm, options: Options) -> AsmFile:
     re_whitespace_or_string = re.compile(r'\s+|"(?:\\.|[^\\"])*"')
     re_local_glabel = re.compile("L(_.*_)?[0-9A-F]{8}")
     re_local_label = re.compile("loc_|locret_|def_|lbl_|LAB_|jump_")
-    re_label = re.compile(r'(?:([a-zA-Z0-9_.$]+)|"([a-zA-Z0-9_.$<>@,-]+)"):')
+    re_label = re.compile(
+        r'(?:(?:\.obj )?([a-zA-Z0-9_.$]+)|"([a-zA-Z0-9_.$<>@,-]+)")[:,]'
+    )
 
     T = TypeVar("T")
 
@@ -578,7 +580,9 @@ def parse_file(f: typing.TextIO, arch: ArchAsm, options: Options) -> AsmFile:
                 args = split_arg_list(args_str)
                 asm_file.new_function(args[0])
             elif ifdef_level == 0:
-                if directive == ".section":
+                if directive == ".obj":
+                    pass
+                elif directive == ".section":
                     curr_section = line.split()[1].split(",")[0]
                     if curr_section in (".rdata", ".late_rodata", ".sdata2"):
                         curr_section = ".rodata"
@@ -646,14 +650,8 @@ def parse_file(f: typing.TextIO, arch: ArchAsm, options: Options) -> AsmFile:
                         for w in args:
                             fval = try_parse(lambda: float(w))
                             asm_file.new_data_bytes(struct.pack(">d", fval))
-                    elif directive in (
-                        ".asci",
-                        ".asciz",
-                        ".ascii",
-                        ".asciiz",
-                        ".string",
-                    ):
-                        z = directive.endswith("z") or directive == ".string"
+                    elif directive in (".asci", ".asciz", ".ascii", ".asciiz", ".string"):
+                        z = directive.endswith("z")
                         asm_file.new_data_bytes(
                             parse_ascii_directive(line, z), is_string=True
                         )

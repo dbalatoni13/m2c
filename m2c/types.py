@@ -530,7 +530,7 @@ class Type:
             elif exact:
                 # Try to insert a new field into the struct at the given offset
                 field_type = Type.any_field(new_within=data.struct)
-                field_name = f"{data.struct.new_field_prefix}{offset:X}"
+                field_name = f"{data.struct.new_field_prefix}{offset:02X}"
                 new_field = data.struct.try_add_field(
                     field_type, offset, field_name, size=target_size
                 )
@@ -1463,17 +1463,17 @@ class StructDeclaration:
 
         # If there are no fields or padding, return everything on one line
         if self.size == 0 and not self.fields:
-            return fmt.with_comments(head + tail, ["size 0x0"])
+            return fmt.with_comments(head + tail, ["size 0x00"])
 
         lines = []
         lines.append(fmt.indent(head))
         with fmt.indented():
-            offset_str_digits = len(fmt.format_hex(self.min_size()))
+            offset_str_digits = len(fmt.format_hex_padded(self.min_size()))
 
             def offset_comment(offset: int) -> str:
                 # Indicate the offset of the field (in hex), written to the *left* of the field
                 nonlocal offset_str_digits
-                return f"/* 0x{fmt.format_hex(offset).zfill(offset_str_digits)} */"
+                return f"/* 0x{fmt.format_hex_padded(offset).zfill(offset_str_digits)} */"
 
             position = 0
             prev_field: Optional[StructDeclaration.StructField] = None
@@ -1483,7 +1483,7 @@ class StructDeclaration:
                 if position < offset:
                     # Fill the gap with a char array, e.g. `char pad12[0x34];`
                     underscore = "_" if fmt.coding_style.unknown_underscore else ""
-                    name = f"pad{underscore}{fmt.format_hex(position)}"
+                    name = f"pad{underscore}{fmt.format_hex_padded(position)}"
                     padding_size = offset - position
 
                     comments = []
@@ -1532,7 +1532,7 @@ class StructDeclaration:
             pad_to(self.min_size(), is_final=True)
         compare = ">=" if self.size is None else "="
         lines.append(
-            fmt.with_comments(tail, [f"size {compare} 0x{fmt.format_hex(position)}"])
+            fmt.with_comments(tail, [f"size {compare} 0x{fmt.format_hex_padded(position)}"])
         )
         return "\n".join(lines)
 
