@@ -91,7 +91,7 @@ from .evaluate import (
 from .types import FunctionSignature, Type
 
 
-class FcmpoCrorPattern(SimpleAsmPattern):
+class FcmpoCrorLtPattern(SimpleAsmPattern):
     """
     For floating point, `x <= y` and `x >= y` use `cror` to OR together the `cr0_eq`
     bit with either `cr0_lt` or `cr0_gt`. Instead of implementing `cror`, we detect
@@ -100,21 +100,34 @@ class FcmpoCrorPattern(SimpleAsmPattern):
 
     pattern = make_pattern(
         "fcmpo $cr0, $x, $y",
-        "cror 2, N, 2",
+        "cror eq, lt, eq",
     )
 
     def replace(self, m: AsmMatch) -> Optional[Replacement]:
         fcmpo = m.body[0]
         assert isinstance(fcmpo, Instruction)
-        if m.literals["N"] == 0:
-            return Replacement(
-                [AsmInstruction("fcmpo.lte.fictive", fcmpo.args)], len(m.body)
-            )
-        elif m.literals["N"] == 1:
-            return Replacement(
-                [AsmInstruction("fcmpo.gte.fictive", fcmpo.args)], len(m.body)
-            )
-        return None
+        return Replacement(
+            [AsmInstruction("fcmpo.lte.fictive", fcmpo.args)], len(m.body)
+        )
+    
+class FcmpoCrorGtPattern(SimpleAsmPattern):
+    """
+    For floating point, `x <= y` and `x >= y` use `cror` to OR together the `cr0_eq`
+    bit with either `cr0_lt` or `cr0_gt`. Instead of implementing `cror`, we detect
+    this pattern and and directly compute the two registers.
+    """
+
+    pattern = make_pattern(
+        "fcmpo $cr0, $x, $y",
+        "cror eq, gt, eq",
+    )
+
+    def replace(self, m: AsmMatch) -> Optional[Replacement]:
+        fcmpo = m.body[0]
+        assert isinstance(fcmpo, Instruction)
+        return Replacement(
+            [AsmInstruction("fcmpo.gte.fictive", fcmpo.args)], len(m.body)
+        )
 
 
 class MfcrPattern(SimpleAsmPattern):
@@ -1068,7 +1081,8 @@ class PpcArch(Arch):
     ]
 
     asm_patterns = [
-        FcmpoCrorPattern(),
+        FcmpoCrorLtPattern(),
+        FcmpoCrorGtPattern(),
         MfcrPattern(),
         TailCallPattern(),
         SaveRestoreRegsFnPattern(),
@@ -1130,7 +1144,7 @@ class PpcArch(Arch):
         "lfd": lambda a: handle_load(a, type=Type.f64()),
         "lfsx": lambda a: handle_loadx(a, type=Type.f32()),
         "lfdx": lambda a: handle_loadx(a, type=Type.f64()),
-        "psq_l": lambda a: ErrorExpr("psq_l unimplemented"),
+        "psq_l": lambda a: None,
     }
     instrs_load_update: InstrMap = {
         "lbau": lambda a: handle_load(a, type=Type.s8()),
