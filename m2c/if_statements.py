@@ -1467,7 +1467,12 @@ def get_function_text(function_info: FunctionInfo, options: Options) -> str:
                 type_decl = var.type.to_decl(var.format(fmt), fmt)
                 temp_decls.append(f"{type_decl};")
                 any_decl = True
-        for decl in sorted(temp_decls):
+
+        def sorting_func(decl):
+            reg = decl.split("_")[1]
+            return (1 if reg[0] == "f" else 0, reg[1:])
+
+        for decl in sorted(temp_decls, key=sorting_func, reverse=True):
             function_lines.append(SimpleStatement(decl).format(fmt))
 
         for phi_var in function_info.stack_info.naive_phi_vars:
