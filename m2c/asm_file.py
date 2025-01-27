@@ -651,7 +651,7 @@ def parse_file(f: typing.TextIO, arch: ArchAsm, options: Options) -> AsmFile:
                             fval = try_parse(lambda: float(w))
                             asm_file.new_data_bytes(struct.pack(">d", fval))
                     elif directive in (".asci", ".asciz", ".ascii", ".asciiz", ".string"):
-                        z = directive.endswith("z")
+                        z = directive.endswith("z") or directive == ".string"
                         asm_file.new_data_bytes(
                             parse_ascii_directive(line, z), is_string=True
                         )

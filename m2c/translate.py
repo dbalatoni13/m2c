@@ -3351,18 +3351,19 @@ class NodeState:
                 # Elide saved register restores with --reg-vars (it doesn't
                 # matter in other cases).
                 return None
-            if expr in self.local_var_writes:
-                # Elide register restores (only for the same register for now,
-                # to be conversative).
-                orig_reg, orig_expr, force = self.local_var_writes[expr]
-                if orig_reg == reg:
-                    expr = orig_expr
-                    if force:
-                        base_expr = expr
-                        if isinstance(base_expr, Cast):
-                            base_expr = base_expr.expr
-                        if isinstance(base_expr, EvalOnceExpr):
-                            base_expr.force()
+            # commenting this out solves the issue where a temp variable is used instead of a stack variable
+            # if expr in self.local_var_writes:
+            #     # Elide register restores (only for the same register for now,
+            #     # to be conversative).
+            #     orig_reg, orig_expr, force = self.local_var_writes[expr]
+            #     if orig_reg == reg:
+            #         expr = orig_expr
+            #         if force:
+            #             base_expr = expr
+            #             if isinstance(base_expr, Cast):
+            #                 base_expr = base_expr.expr
+            #             if isinstance(base_expr, EvalOnceExpr):
+            #                 base_expr.force()
 
         return self.set_reg_real(reg, expr)
 
