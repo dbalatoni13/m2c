@@ -91,7 +91,7 @@ from .evaluate import (
 from .types import FunctionSignature, Type
 
 
-class FcmpoCrorLtLtPattern(SimpleAsmPattern):
+class FcmpoCrorLtPattern(SimpleAsmPattern):
     """
     For floating point, `x <= y` and `x >= y` use `cror` to OR together the `cr0_eq`
     bit with either `cr0_lt` or `cr0_gt`. Instead of implementing `cror`, we detect
@@ -106,29 +106,6 @@ class FcmpoCrorLtLtPattern(SimpleAsmPattern):
     def replace(self, m: AsmMatch) -> Optional[Replacement]:
         fcmpo = m.body[0]
         assert isinstance(fcmpo, Instruction)
-        return Replacement(
-            [AsmInstruction("fcmpo.lte.fictive", fcmpo.args)], len(m.body)
-        )
-
-
-class FcmpoCrorGtPattern(SimpleAsmPattern):
-    """
-    For floating point, `x <= y` and `x >= y` use `cror` to OR together the `cr0_eq`
-    bit with either `cr0_lt` or `cr0_gt`. Instead of implementing `cror`, we detect
-    this pattern and and directly compute the two registers.
-    """
-
-    pattern = make_pattern(
-        "fcmpo $cr0, $x, $y",
-        "cror eq, gt, eq",
-    )
-
-    def replace(self, m: AsmMatch) -> Optional[Replacement]:
-        fcmpo = m.body[0]
-        assert isinstance(fcmpo, Instruction)
-        return Replacement(
-            [AsmInstruction("fcmpo.gte.fictive", fcmpo.args)], len(m.body)
-        )
         return Replacement(
             [AsmInstruction("fcmpo.lte.fictive", fcmpo.args)], len(m.body)
         )
